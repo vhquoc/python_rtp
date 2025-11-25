@@ -1,0 +1,18 @@
+Tạo server:
+python Server.py 8554
+
+
+Chạy Client:
+python ClientLauncher.py <Server_IP> <Server_Port> <RTP_Port> <File_Name>
+
+python ClientLauncher.py 127.0.0.1 8554 5005 movie.Mjpeg
+
+Giải thích:
+
+127.0.0.1 → chạy server và client cùng máy
+
+8554 → port RTSP server đang mở
+
+5005 → port để nhận RTP video
+
+movie.Mjpeg → file video bạn muốn xem
