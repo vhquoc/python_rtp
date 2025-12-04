@@ -34,13 +34,10 @@ class Client:
         self.rtpSocket = None
         self.rtspSocket = None  
 
-        # =====================================================
-        #                    GUI GIỐNG BẢN GỐC
-        # =====================================================
         self.root = tk.Tk()
         self.root.title("RTP Video Client")
 
-        # Vùng video (giả lập frame trắng ban đầu)
+        # Vùng video
         self.frame = tk.Frame(self.root, width=600, height=450, bg="white")
         self.frame.pack(padx=10, pady=10)
 

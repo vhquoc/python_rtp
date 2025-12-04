@@ -1,6 +1,6 @@
 import socket, threading, sys, os, time
 from RtpPacket import RtpPacket
-from VideoStream import VideoStream      # <<< QUAN TRỌNG!
+from VideoStream import VideoStream
 
 class Server:
     def __init__(self, serverPort=8554, videoFile="movie.MJPEG"):
