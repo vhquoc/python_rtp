@@ -44,6 +44,10 @@ class Client:
         self.bufferLock = threading.Lock()
         # Số frame cần nạp trước khi bắt đầu play
         self.bufferPrefill = 40
+        # Biến dùng để ghép nhiều gói RTP thành 1 frame JPEG hoàn chỉnh
+        self.currentFrameBytes = bytearray()
+        self.expectedSeq = None
+
         # Khoảng thời gian giữa hai frame khi hiển thị (ms)
         self.playIntervalMs = 50   # ~20 fps
 
@@ -198,8 +202,9 @@ class Client:
         # Thread nhận RTP packet
         threading.Thread(target=self.listenRtp, daemon=True).start()
 
+
     def listenRtp(self):
-        """Lắng nghe gói RTP và đẩy payload vào buffer."""
+        """Lắng nghe gói RTP, ghép các mảnh lại thành 1 frame rồi mới đẩy vào buffer."""
         while True:
             try:
                 data = self.rtpSocket.recv(65535)
@@ -208,9 +213,27 @@ class Client:
                     rtp.decode(data)
                     payload = rtp.getPayload()
 
-                    # Đưa frame vào buffer, không hiển thị ngay
-                    with self.bufferLock:
-                        self.frameBuffer.append(payload)
+                    seq = rtp.seqNum()
+                    marker = rtp.marker()
+
+                    # Nếu là packet đầu tiên hoặc bị nhảy số thứ tự -> reset ghép frame
+                    if self.expectedSeq is None or seq != self.expectedSeq:
+                        self.currentFrameBytes = bytearray()
+
+                    # Ghép payload của packet hiện tại vào frame đang xây dựng
+                    self.currentFrameBytes.extend(payload)
+
+                    # Cập nhật sequence mong đợi tiếp theo (mod 65536)
+                    self.expectedSeq = (seq + 1) & 0xFFFF
+
+                    # Nếu marker = 1 -> đây là mảnh cuối cùng của frame
+                    if marker == 1:
+                        full_frame = bytes(self.currentFrameBytes)
+                        with self.bufferLock:
+                            self.frameBuffer.append(full_frame)
+
+                        # Reset cho frame kế tiếp
+                        self.currentFrameBytes = bytearray()
 
             except socket.timeout:
                 if self.teardownAcked:
